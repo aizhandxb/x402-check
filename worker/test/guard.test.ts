@@ -79,8 +79,32 @@ describe("isBlockedIp IPv6 bypass regressions", () => {
   test.each(["::ffff:808:808", "2001:4860:4860::8888"])("allows %s", (ip) => expect(isBlockedIp(ip)).toBe(false));
 });
 
+describe("isBlockedIp transition prefixes and documentation ranges", () => {
+  test.each([
+    "64:ff9b::a00:1", "64:ff9b::7f00:1", "2002:a00:1::", "2002:7f00:1::1", "2001:0:4136:e378:8000:63bf:3fff:fdd2", "fec0::1",
+    "192.0.0.1", "192.0.2.5", "198.51.100.7", "203.0.113.9",
+  ])("blocks %s", (ip) => expect(isBlockedIp(ip)).toBe(true));
+  test.each(["64:ff9b::808:808", "2002:808:808::1"])("allows %s", (ip) => expect(isBlockedIp(ip)).toBe(false));
+});
+
+describe("dohResolver DNS status", () => {
+  test("a SERVFAIL on the A query is a network error even if AAAA answers", async () => {
+    const fetchImpl: Fetcher = async (url) =>
+      new URL(url).searchParams.get("type") === "A"
+        ? Response.json({ Status: 2 })
+        : Response.json({ Status: 0, Answer: [{ type: 28, data: "2606:2800:220:1::1" }] });
+    await expect(dohResolver(fetchImpl)("example.com")).rejects.toMatchObject({ code: "network" });
+  });
+  test("NXDOMAIN yields no addresses", async () => {
+    const fetchImpl: Fetcher = async () => Response.json({ Status: 3 });
+    expect(await dohResolver(fetchImpl)("nope.example.com")).toEqual([]);
+  });
+});
+
 describe("assertPublicUrl bypass regressions", () => {
   test.each([
+    "https://localhost../",
+    "https://foo.internal../",
     "https://[::ffff:127.0.0.1]/",
     "https://[::ffff:a00:1]/",
     "https://[::127.0.0.1]/",

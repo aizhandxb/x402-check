@@ -55,6 +55,11 @@ export function isBlockedIp(ip: string): boolean {
     if (zeroFirst(4) && g[4] === 0xffff && g[5] === 0) return isBlockedIp(embedded); // ::ffff:0:a.b.c.d
     if (zeroFirst(6)) return isBlockedIp(embedded); // ::a.b.c.d (compatible)
     const first = g[0] ?? 0;
+    const v4At = (i: number) => `${(g[i] ?? 0) >> 8}.${(g[i] ?? 0) & 255}.${(g[i + 1] ?? 0) >> 8}.${(g[i + 1] ?? 0) & 255}`;
+    if (first === 0x64 && g[1] === 0xff9b && g.slice(2, 6).every((x) => x === 0)) return isBlockedIp(embedded); // 64:ff9b::/96 (NAT64)
+    if (first === 0x2002) return isBlockedIp(v4At(1)); // 2002::/16 (6to4)
+    if (first === 0x2001 && g[1] === 0) return true; // 2001::/32 (Teredo)
+    if ((first & 0xffc0) === 0xfec0) return true; // fec0::/10 (site-local)
     if ((first & 0xfe00) === 0xfc00) return true; // fc00::/7
     if ((first & 0xffc0) === 0xfe80) return true; // fe80::/10
     if ((first & 0xff00) === 0xff00) return true; // ff00::/8
@@ -65,7 +70,8 @@ export function isBlockedIp(ip: string): boolean {
   if (parts.some((n) => n > 255)) return true;
   const [a, b] = parts as [number, number, number, number];
   return a === 0 || a === 10 || a === 127 || (a === 100 && b >= 64 && b <= 127) || (a === 169 && b === 254) ||
-    (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || (a === 198 && (b === 18 || b === 19)) || a >= 224;
+    (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || (a === 192 && b === 0 && parts[2] === 0) || (a === 192 && b === 0 && parts[2] === 2) ||
+    (a === 198 && b === 51 && parts[2] === 100) || (a === 203 && b === 0 && parts[2] === 113) || (a === 198 && (b === 18 || b === 19)) || a >= 224;
 }
 
 export async function assertPublicUrl(raw: string, resolve: Resolver): Promise<URL> {
@@ -78,7 +84,7 @@ export async function assertPublicUrl(raw: string, resolve: Resolver): Promise<U
   if (url.protocol !== "https:") throw new CheckError("Only https:// URLs can be checked here", "invalid_url");
   if (url.username || url.password) throw new CheckError("URLs with credentials are not allowed", "invalid_url");
   if (url.port && url.port !== "443") throw new CheckError("Only the default HTTPS port can be checked here", "blocked");
-  const host = url.hostname.replace(/^\[|\]$/g, "").replace(/\.$/, "");
+  const host = url.hostname.replace(/^\[|\]$/g, "").replace(/\.+$/, "");
   if (BLOCKED_NAMES.test(host)) throw new CheckError("This host is not allowed", "blocked");
   const ips = IPV4.test(host) || host.includes(":") ? [host] : await resolve(host);
   if (ips.length === 0) throw new CheckError("Host does not resolve", "network");
@@ -103,7 +109,8 @@ export function dohResolver(fetchImpl: Fetcher): Resolver {
         headers: { accept: "application/dns-json" },
       });
       if (!res.ok) throw new CheckError("DNS lookup failed", "network");
-      const data = (await res.json()) as { Answer?: { type: number; data: string }[] };
+      const data = (await res.json()) as { Status?: number; Answer?: { type: number; data: string }[] };
+      if (data.Status !== undefined && data.Status !== 0 && data.Status !== 3) throw new CheckError("DNS lookup failed", "network");
       for (const a of data.Answer ?? []) if (a.type === 1 || a.type === 28) out.push(a.data);
     }
     return out;

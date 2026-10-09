@@ -42,7 +42,7 @@ The core does no network I/O of its own. It receives `fetch`, so tests can use r
 
 ### 2.2 CLI
 
-- `npx x402-check <url> [--method POST] [--json] [--timeout 10000]`
+- `npx x402-endpoint-check <url> [--method POST] [--json] [--timeout 10000]`
 - Human output: findings grouped by severity, with each fix shown.
 - `--json` prints the `CheckReport` as JSON.
 - Exit code: `0` if there are no high or critical findings, `1` if there are, `2` on usage or network error. That makes it CI-ready, and the GitHub Action can be added later.

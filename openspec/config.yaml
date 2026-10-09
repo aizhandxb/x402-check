@@ -2,7 +2,7 @@ schema: spec-driven
 
 context: |
   Project: x402-check - passive security and setup checks for x402 payment endpoints.
-  Shape: TypeScript library + CLI (npx x402-check <url>) + Cloudflare Worker API used by
+  Shape: TypeScript library + CLI (npx x402-endpoint-check <url>) + Cloudflare Worker API used by
   https://ledgers.ae/tools/x402-checker/. Node 20+, ESM, Vitest, no runtime dependencies.
   Passive only: never signs or sends a real payment; at most 3 HTTP requests per check.
   Wire formats follow github.com/x402-foundation/x402 (v2 spec + transports-v2/http.md);

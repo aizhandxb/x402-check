@@ -5,8 +5,10 @@ Passive security and setup checks for **x402 payment endpoints**. Point it at a 
 It never signs or sends a real payment, and it makes at most 3 HTTP requests per run.
 
 ```bash
-npx x402-check https://api.example.com/premium-data
+npx x402-endpoint-check https://api.example.com/premium-data
 ```
+
+Installed globally (`npm i -g x402-endpoint-check`), the command is `x402-check`.
 
 Prefer a browser? Use the hosted version at https://ledgers.ae/tools/x402-checker/
 
@@ -28,19 +30,19 @@ Details and fixes for each check: [docs/checks.md](docs/checks.md). The checks m
 ## Usage
 
 ```bash
-npx x402-check <url> [--method GET|POST] [--json] [--timeout 10000]
+npx x402-endpoint-check <url> [--method GET|POST] [--json] [--timeout 10000]
 ```
 
 Exit codes: `0` no high or critical findings, `1` high or critical findings, `2` usage or network error. That makes it easy to run in CI:
 
 ```yaml
-- run: npx x402-check https://staging.example.com/paid --json > x402-report.json
+- run: npx x402-endpoint-check https://staging.example.com/paid --json > x402-report.json
 ```
 
 As a library:
 
 ```ts
-import { checkEndpoint } from "x402-check";
+import { checkEndpoint } from "x402-endpoint-check";
 const report = await checkEndpoint("https://api.example.com/premium-data", { fetch });
 ```
 

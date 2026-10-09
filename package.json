@@ -1,5 +1,5 @@
 {
-  "name": "x402-check",
+  "name": "x402-endpoint-check",
   "version": "0.1.0",
   "description": "Passive security and setup checks for x402 payment endpoints",
   "type": "module",

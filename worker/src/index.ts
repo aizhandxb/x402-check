@@ -40,6 +40,7 @@ export function createHandler(fetchImpl: Fetcher = (input, init) => fetch(input,
     } catch {
       return json(400, { error: "invalid_json" });
     }
+    if (typeof body !== "object" || body === null || Array.isArray(body)) return json(400, { error: "invalid_json" });
     if (typeof body.url !== "string" || body.url.length > 2048) return json(400, { error: "invalid_url" });
     const token = typeof body.turnstileToken === "string" ? body.turnstileToken : "";
     if (!(await siteVerify(token, ip, env.TURNSTILE_SECRET, fetchImpl, env.TURNSTILE_HOSTNAME))) {

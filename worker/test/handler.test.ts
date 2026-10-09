@@ -99,6 +99,8 @@ describe("worker", () => {
     const bad = new Request("https://w.example/check", { method: "POST", headers: { origin: ORIGIN }, body: "{" });
     expect((await createHandler(net())(bad, env())).status).toBe(400);
     expect((await createHandler(net())(req({ url: 42, turnstileToken: "t" }), env())).status).toBe(400);
+    expect((await createHandler(net())(req(null), env())).status).toBe(400);
+    expect((await createHandler(net())(req([]), env())).status).toBe(400);
   });
 
   test("health and unknown routes", async () => {

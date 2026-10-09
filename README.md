@@ -50,7 +50,7 @@ Passive checks can't prove that replay protection, settlement ordering or settle
 
 ## Privacy
 
-The CLI talks only to the URL you give it. The hosted version does not store the URLs you check or the reports.
+The CLI talks only to the URL you give it. The hosted version does not store the URLs you check or the reports. It logs only the hostname and the most severe result, for abuse prevention and usage counts.
 
 Terminal output escapes control characters, so a hostile endpoint cannot inject escape sequences into your terminal.
 

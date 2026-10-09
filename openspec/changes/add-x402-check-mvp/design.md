@@ -7,7 +7,7 @@ Two deliverables, each with its own implementation plan.
 | Part | Where | Contents |
 |---|---|---|
 | **`x402-check` repo** | `~/vscode/public/x402-check`, public on GitHub under the `aizhandxb` account, Apache-2.0, built with OpenSpec + TDD | `src/core` (pure checks), `src/cli` (CLI), `worker/` (Cloudflare Worker API) |
-| **ledgers.ae page** | this monorepo, `sites/ledgers.ae/` | `/tools/x402-checker/` page plus JS that calls the Worker; `/tools/` switches from "coming soon" to "live" |
+| **ledgers.ae page** | the hosting website (ledgers.ae) | `/tools/x402-checker/` page plus JS that calls the Worker; `/tools/` switches from "coming soon" to "live" |
 
 npm package name: `x402-check` (confirmed unregistered on 2026-10-09).
 
@@ -51,7 +51,7 @@ The core does no network I/O of its own. It receives `fetch`, so tests can use r
 
 - `POST /check` with body `{ url, method?, turnstileToken }` returns a `CheckReport`, or `{ error }` with a 4xx code.
 - CORS allows only `https://ledgers.ae`.
-- Deployed as a `workers.dev` Worker on the owner's Cloudflare account; a custom route can be added later.
+- Deployed as a Cloudflare Worker (the hosting website, ledgers.ae, calls it); a custom route can be added later.
 
 ## 3. Checks (passive only)
 
@@ -69,8 +69,8 @@ Cache indicators for X05 are read from the response to the first request.
 | X03 | Payment requirements | The `PAYMENT-REQUIRED` header can't be decoded; there's no `accepts` list; a required field is missing (v2: `resource.url`, and per option `scheme`, `network`, `amount`, `asset`, `payTo`, `maxTimeoutSeconds`; v1: `maxAmountRequired` instead of `amount`); the network is not CAIP-2 in v2; `payTo` doesn't match an `eip155` or `solana` address format; the amount is not a positive integer string | high (medium for an unrecognized scheme, a bad `maxTimeoutSeconds`, or `resource.url` not matching the checked URL) |
 | X04 | Junk payment rejected | A malformed `PAYMENT-SIGNATURE` (or `X-PAYMENT` on v1) gets a 2xx response. 400 (the spec) and 402 (the reference server) both pass | critical |
 | X05 | Cache safety | The paid path shows CDN cache indicators (`Age` > 0, `cf-cache-status: HIT`, `x-cache: HIT`), or the response lacks `Cache-Control: no-store` or `private` | high (cache hit without no-store), medium (cache hit despite no-store), low (no-store missing) |
-| X06 | Transport | Plain HTTP, or a redirect to another host | high |
-| X07 | Browser CORS (recommendation; the x402 spec does not cover CORS) | CORS is enabled but `Access-Control-Expose-Headers` does not list `PAYMENT-REQUIRED` and `PAYMENT-RESPONSE` (v2 only) | low |
+| X06 | Transport | Plain HTTP, or a redirect to another host or to plain HTTP | high |
+| X07 | Browser CORS (recommendation; the x402 spec does not cover CORS) | CORS is enabled but `Access-Control-Expose-Headers` neither lists `PAYMENT-REQUIRED` and `PAYMENT-RESPONSE` nor is `*` (v2 only) | low |
 | X08 | Discovery | `extensions.bazaar` is present or absent in the v2 PaymentRequired object | info |
 
 **Wire formats (verified 2026-10-09 against github.com/x402-foundation/x402 main, pushed 2026-10-07):** `specs/x402-specification-v2.md`, `specs/transports-v2/http.md`, `specs/x402-specification-v1.md`, `specs/extensions/bazaar.md`, and the reference server `typescript/packages/core/src/http/x402HTTPResourceServer.ts`. Test fixtures copy the spec's own examples and cite these paths.
@@ -81,10 +81,10 @@ The Worker requests user-supplied URLs, so it must not become an open proxy or a
 
 - **Scheme:** only `https:` URLs are accepted. Plain `http:` is reported as an X06 finding, but the request itself is refused.
 - **Private-network blocking (SSRF):** resolve the hostname with DNS-over-HTTPS before fetching. Reject loopback, private ranges, link-local and cloud-metadata addresses (169.254.169.254, fd00::/8 and similar), plus `localhost` and `*.internal`. Also reject IP-literal hosts in those ranges.
-- **Redirects:** `redirect: "manual"`. A redirect to a different host is reported as X06 and not followed. Same-host redirects are followed at most once.
+- **Redirects:** `redirect: "manual"`. A redirect to a different host, or from https to http, is reported as X06 and not followed. Same-origin redirects are followed at most once.
 - **Limits:** at most 3 outbound requests per check, a 10-second total timeout, and a 256 KB response body cap (read as a stream, then aborted).
-- **Abuse controls:** a Turnstile token is required. The Worker reuses the existing Group AE Turnstile widget if its hostnames include `ledgers.ae`; otherwise it gets a new widget, which needs the owner to add the secret. Requests are rate-limited per client IP with Cloudflare's rate-limiting binding: 10 checks per minute and 100 per day.
-- **Privacy:** checked URLs and results are not stored. Logs hold only aggregate counts and the hostname. The page says this.
+- **Abuse controls:** a Turnstile token is required. The Worker verifies a Turnstile widget configured for the hosting site. Requests are rate-limited per client IP with Cloudflare's rate-limiting binding: 10 checks per minute per IP (the binding supports only 10s or 60s periods, so there is no daily cap).
+- **Privacy:** checked URLs and results are not stored. Logs hold only the hostname and the most severe result, for abuse prevention and usage counts. The page says this.
 - **Outbound identification:** a `User-Agent` of `x402-check/<version> (+https://ledgers.ae/tools/x402-checker/)`, so endpoint owners can see who is calling.
 
 The CLI runs on the user's own machine, so it applies only the limits and the redirect rule. It does not apply private-network blocking, because developers should be able to check `localhost` while they build.

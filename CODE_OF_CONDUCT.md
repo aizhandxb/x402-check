@@ -4,4 +4,4 @@ This project adopts the [Contributor Covenant, version 2.1](https://www.contribu
 
 In short: be respectful, assume good faith, no harassment or personal attacks, and keep discussions technical. We welcome contributors from everywhere.
 
-Instances of unacceptable behavior may be reported to the maintainers via a private GitHub report on the x402-check repository. All reports will be reviewed promptly and confidentially.
+Instances of unacceptable behavior may be reported to the maintainers through the private vulnerability reporting channel described in [SECURITY.md](SECURITY.md) (GitHub "Report a vulnerability" on this repository). All reports will be reviewed promptly and confidentially.

@@ -2,6 +2,9 @@
   "name": "x402-check",
   "main": "src/index.ts",
   "compatibility_date": "2026-09-01",
+  // Served only from the hosting site's subdomain; the workers.dev address is off.
+  "routes": [{ "pattern": "x402-check.ledgers.ae", "custom_domain": true }],
+  "workers_dev": false,
   // Logs on, tracing off so subrequest URLs are not recorded.
   "observability": { "enabled": true, "logs": { "enabled": true }, "traces": { "enabled": false } },
   // 10 checks per minute per client IP. Cloudflare's rate limiting binding only

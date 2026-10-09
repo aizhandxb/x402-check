@@ -70,6 +70,13 @@ describe("checkEndpoint", () => {
     expect(r.findings.some((x) => x.id === "X06" && x.severity === "high")).toBe(true);
   });
 
+  test("same-host https to http redirect is reported as X06 and not followed", async () => {
+    const f = scripted([plain(301, { location: "http://api.example.com/x" })]);
+    const r = await checkEndpoint(TARGET, { fetch: f });
+    expect(r.requestsMade).toBe(1);
+    expect(r.findings.some((x) => x.id === "X06" && x.severity === "high" && /plain HTTP/.test(x.title))).toBe(true);
+  });
+
   test("POST sends an empty JSON body", async () => {
     const f = scripted([plain(200)]);
     await checkEndpoint(TARGET, { fetch: f, method: "POST" });

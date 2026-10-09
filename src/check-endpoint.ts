@@ -76,8 +76,9 @@ export async function checkEndpoint(rawUrl: string, opts: CheckOptions): Promise
     }
     if (to) {
       const crossHost = to.host !== target.host;
-      redirect = { from: target.toString(), to: to.toString(), crossHost };
-      if (!crossHost) {
+      const downgrade = target.protocol === "https:" && to.protocol === "http:";
+      redirect = { from: target.toString(), to: to.toString(), crossHost, downgrade };
+      if (to.origin === target.origin) {
         target = to;
         first = await send(target);
       }

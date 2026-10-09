@@ -49,7 +49,7 @@ export interface ProbeContext {
   first: Snapshot;
   parsed: Parsed402;
   junk?: Snapshot;
-  redirect?: { from: string; to: string; crossHost: boolean };
+  redirect?: { from: string; to: string; crossHost: boolean; downgrade: boolean };
 }
 
 export type CheckErrorCode = "invalid_url" | "network" | "timeout" | "blocked";

@@ -13,5 +13,9 @@ export function checkTransport(ctx: ProbeContext): Finding[] {
     out.push(finding("X06", "high", "Redirects to a different host", `${ctx.redirect.from} -> ${ctx.redirect.to}`,
       "Serve the 402 from the requested host. Clients may resend payment headers to the redirect target."));
   }
+  if (ctx.redirect?.downgrade) {
+    out.push(finding("X06", "high", "Redirects to plain HTTP", `${ctx.redirect.from} -> ${ctx.redirect.to}`,
+      "Keep the payment endpoint on HTTPS; never redirect paid routes to http."));
+  }
   return out.length > 0 ? out : [ok("X06", "HTTPS and no cross-host redirect", ctx.url.protocol)];
 }

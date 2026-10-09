@@ -17,3 +17,7 @@ test("CORS exposing both payment headers passes", async () => {
 test("v1 endpoints are not checked for CORS headers", async () => {
   expect(checkCors(await makeCtx(v1Response(undefined, { "access-control-allow-origin": "*" })))).toEqual([]);
 });
+test("a wildcard Access-Control-Expose-Headers passes", async () => {
+  const res = v2Response(undefined, { "access-control-allow-origin": "*", "access-control-expose-headers": "*" });
+  expect(checkCors(await makeCtx(res))[0]?.title).toMatch(/^OK:/);
+});

@@ -10,7 +10,8 @@ export function checkCors(ctx: ProbeContext): Finding[] {
       "Fine for server-side agents. If browser clients must read payment headers, enable CORS and expose PAYMENT-REQUIRED and PAYMENT-RESPONSE.")];
   }
   const expose = (h.get("access-control-expose-headers") ?? "").toLowerCase();
-  const missing = ["payment-required", "payment-response"].filter((name) => !expose.includes(name));
+  const wildcard = expose.split(",").some((t) => t.trim() === "*");
+  const missing = wildcard ? [] : ["payment-required", "payment-response"].filter((name) => !expose.includes(name));
   if (missing.length > 0) {
     return [finding("X07", "low", "CORS does not expose payment headers", `Access-Control-Expose-Headers: ${expose || "(none)"}`,
       "Add PAYMENT-REQUIRED and PAYMENT-RESPONSE to Access-Control-Expose-Headers so browser agents can read them. This is a recommendation; the x402 spec does not cover CORS.")];

@@ -2,7 +2,8 @@
   "name": "x402-check",
   "main": "src/index.ts",
   "compatibility_date": "2026-09-01",
-  "observability": { "enabled": true },
+  // Logs on, tracing off so subrequest URLs are not recorded.
+  "observability": { "enabled": true, "logs": { "enabled": true }, "traces": { "enabled": false } },
   // 10 checks per minute per client IP. Cloudflare's rate limiting binding only
   // supports 10s or 60s periods, so there is no daily cap in v1.
   "ratelimits": [{ "name": "CHECK_LIMITER", "namespace_id": "2001", "simple": { "limit": 10, "period": 60 } }],

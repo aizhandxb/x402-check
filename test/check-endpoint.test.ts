@@ -98,4 +98,18 @@ describe("checkEndpoint", () => {
     const f: Fetcher = async () => { throw new CheckError("private", "blocked"); };
     await expect(checkEndpoint(TARGET, { fetch: f })).rejects.toMatchObject({ code: "blocked" });
   });
+
+  test("stalled body is bounded by the budget even if the fetcher ignores the signal", async () => {
+    const f: Fetcher = async () => new Response(new ReadableStream({ start() {} }), { status: 402 });
+    const t0 = Date.now();
+    await expect(checkEndpoint(TARGET, { fetch: f, timeoutMs: 50 })).rejects.toMatchObject({ code: "timeout" });
+    expect(Date.now() - t0).toBeLessThan(2000);
+  });
+
+  test("malformed Location does not throw a raw error", async () => {
+    const f = scripted([plain(302, { location: "http://[" })]);
+    const r = await checkEndpoint(TARGET, { fetch: f });
+    expect(r.requestsMade).toBe(1);
+    expect(r.findings.find((x) => x.id === "X01")?.severity).toBe("medium");
+  });
 });

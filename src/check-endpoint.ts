@@ -30,15 +30,31 @@ export async function checkEndpoint(rawUrl: string, opts: CheckOptions): Promise
     requestsMade++;
     const headers: Record<string, string> = { Accept: "application/json", "User-Agent": USER_AGENT, ...extra };
     if (method === "POST") headers["Content-Type"] = "application/json";
+    const signal = AbortSignal.timeout(remaining);
+    let res: Response | undefined;
+    const aborted = new Promise<never>((_, reject) => {
+      const onAbort = () => {
+        void res?.body?.cancel().catch(() => undefined);
+        reject(new CheckError("Timed out", "timeout"));
+      };
+      if (signal.aborted) onAbort();
+      else signal.addEventListener("abort", onAbort, { once: true });
+    });
+    aborted.catch(() => undefined);
     try {
-      const res = await opts.fetch(target.toString(), {
-        method,
-        redirect: "manual",
-        headers,
-        body: method === "POST" ? "{}" : undefined,
-        signal: AbortSignal.timeout(remaining),
-      });
-      return await toSnapshot(res, maxBody);
+      return await Promise.race([
+        (async () => {
+          res = await opts.fetch(target.toString(), {
+            method,
+            redirect: "manual",
+            headers,
+            body: method === "POST" ? "{}" : undefined,
+            signal,
+          });
+          return toSnapshot(res, maxBody);
+        })(),
+        aborted,
+      ]);
     } catch (e) {
       if (e instanceof CheckError) throw e;
       const name = (e as { name?: string } | null)?.name;
@@ -52,12 +68,19 @@ export async function checkEndpoint(rawUrl: string, opts: CheckOptions): Promise
   let redirect: ProbeContext["redirect"];
   const location = first.headers.get("location");
   if (first.status >= 300 && first.status < 400 && location) {
-    const to = new URL(location, target);
-    const crossHost = to.host !== target.host;
-    redirect = { from: target.toString(), to: to.toString(), crossHost };
-    if (!crossHost) {
-      target = to;
-      first = await send(target);
+    let to: URL | undefined;
+    try {
+      to = new URL(location, target);
+    } catch {
+      to = undefined;
+    }
+    if (to) {
+      const crossHost = to.host !== target.host;
+      redirect = { from: target.toString(), to: to.toString(), crossHost };
+      if (!crossHost) {
+        target = to;
+        first = await send(target);
+      }
     }
   }
 

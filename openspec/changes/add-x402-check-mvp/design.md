@@ -51,7 +51,7 @@ The core does no network I/O of its own. It receives `fetch`, so tests can use r
 
 - `POST /check` with body `{ url, method?, turnstileToken }` returns a `CheckReport`, or `{ error }` with a 4xx code.
 - CORS allows only `https://ledgers.ae`.
-- Deployed as `x402-check.rustem.workers.dev` (same account as `lead-agent.rustem.workers.dev`); a custom route can be added later.
+- Deployed as a `workers.dev` Worker on the owner's Cloudflare account; a custom route can be added later.
 
 ## 3. Checks (passive only)
 

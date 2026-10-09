@@ -4,10 +4,14 @@ const AUDIT_URL = "https://ledgers.ae/services/agentic-payment-security-audit/";
 
 // C0 controls (including \n and \t), DEL and C1 controls. Endpoint-controlled text
 // must never reach the terminal raw: escape sequences could rewrite or spoof output.
-const CONTROL_CHARS = /[\u0000-\u001f\u007f-\u009f]/g;
+// Also covers bidi overrides/isolates, zero-width characters, line/paragraph separators and the BOM.
+const CONTROL_CHARS = /[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u2028-\u202e\u2066-\u2069\ufeff]/g;
 
 export function sanitize(s: string): string {
-  return s.replace(CONTROL_CHARS, (c) => `\\x${c.charCodeAt(0).toString(16).padStart(2, "0")}`);
+  return s.replace(CONTROL_CHARS, (c) => {
+    const code = c.charCodeAt(0);
+    return code <= 0xff ? `\\x${code.toString(16).padStart(2, "0")}` : `\\u{${code.toString(16)}}`;
+  });
 }
 
 export function exitCodeFor(report: CheckReport): 0 | 1 {

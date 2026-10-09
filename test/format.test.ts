@@ -39,3 +39,13 @@ test("formatReport still prints one line per finding header", () => {
 test("JSON output of the same report contains no raw ESC character", () => {
   expect(JSON.stringify(hostileReport(), null, 2)).not.toContain("\u001b");
 });
+
+test("formatReport escapes bidi, zero-width, separator and BOM characters", () => {
+  const nasty = "a\u202eb\u200bc\u2028d\u2029e\ufeff\u2066f\u2069g";
+  const report = hostileReport();
+  report.findings[0]!.evidence = nasty;
+  const text = formatReport(report);
+  expect(text).not.toMatch(/[\u200b-\u200f\u2028-\u202e\u2066-\u2069\ufeff]/);
+  expect(text).toContain("\\u{202e}");
+  expect(text).toContain("\\u{200b}");
+});

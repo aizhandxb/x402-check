@@ -1,6 +1,6 @@
 import { parseArgs } from "node:util";
 import { checkEndpoint } from "./check-endpoint.js";
-import { exitCodeFor, formatReport } from "./format.js";
+import { exitCodeFor, formatReport, sanitize } from "./format.js";
 import { CheckError, VERSION, type Fetcher } from "./types.js";
 
 export const USAGE = `Usage: x402-check <url> [options]
@@ -56,7 +56,7 @@ export async function main(argv: string[], io: CliIO): Promise<number> {
     io.out(values.json ? JSON.stringify(report, null, 2) : formatReport(report));
     return exitCodeFor(report);
   } catch (e) {
-    if (e instanceof CheckError) { io.err(`error: ${e.message}`); return 2; }
+    if (e instanceof CheckError) { io.err(`error: ${sanitize(e.message)}`); return 2; }
     throw e;
   }
 }

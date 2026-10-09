@@ -24,6 +24,13 @@ test("--version prints the version", async () => {
   expect(await main(["--version"], t.io)).toBe(0);
   expect(t.out[0]).toMatch(/^\d+\.\d+\.\d+$/);
 });
+test("fetch errors with escape sequences are sanitized on stderr", async () => {
+  const t = io();
+  t.io.fetch = async () => { throw new TypeError("bad\u001b[2Jname"); };
+  expect(await main([TARGET], t.io)).toBe(2);
+  expect(t.err.join("\n")).not.toContain("\u001b");
+  expect(t.err.join("\n")).toContain("\\x1b");
+});
 test("missing url exits 2", async () => {
   expect(await main([], io().io)).toBe(2);
 });

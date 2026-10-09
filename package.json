@@ -1,0 +1,50 @@
+{
+  "name": "x402-check",
+  "version": "0.1.0",
+  "description": "Passive security and setup checks for x402 payment endpoints",
+  "type": "module",
+  "license": "Apache-2.0",
+  "bin": {
+    "x402-check": "dist/bin.js"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "worker:build": "wrangler deploy --dry-run --outdir .wrangler-dry -c worker/wrangler.jsonc",
+    "worker:deploy": "wrangler deploy -c worker/wrangler.jsonc"
+  },
+  "keywords": [
+    "x402",
+    "agentic-payments",
+    "http-402",
+    "security",
+    "ai-agents"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aizhandxb/x402-check.git"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.1",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.11",
+    "wrangler": "^4.149.0"
+  }
+}

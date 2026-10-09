@@ -70,3 +70,26 @@ describe("dohResolver", () => {
     await expect(dohResolver(fetchImpl)("example.com")).rejects.toMatchObject({ code: "network" });
   });
 });
+
+describe("isBlockedIp IPv6 bypass regressions", () => {
+  test.each([
+    "::ffff:7f00:1", "::ffff:a00:1", "::7f00:1", "::ffff:0:a00:1", "0:0:0:0:0:0:0:1", "0::1", "0:0:0:0:0:0:0:0",
+    "::ffff:192.168.1.1", "fe80::1%eth0",
+  ])("blocks %s", (ip) => expect(isBlockedIp(ip)).toBe(true));
+  test.each(["::ffff:808:808", "2001:4860:4860::8888"])("allows %s", (ip) => expect(isBlockedIp(ip)).toBe(false));
+});
+
+describe("assertPublicUrl bypass regressions", () => {
+  test.each([
+    "https://[::ffff:127.0.0.1]/",
+    "https://[::ffff:a00:1]/",
+    "https://[::127.0.0.1]/",
+    "https://localhost./",
+    "https://db.internal./",
+    "https://0x7f.1/",
+    "https://2130706433/",
+    "https://127.1/",
+  ])("rejects %s with blocked", async (url) => {
+    await expect(assertPublicUrl(url, resolveTo(["93.184.216.34"]))).rejects.toMatchObject({ code: "blocked" });
+  });
+});
